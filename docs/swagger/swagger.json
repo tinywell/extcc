@@ -1,0 +1,117 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {},
+        "license": {}
+    },
+    "host": "localhost:9999",
+    "paths": {
+        "/api/chaincode": {
+            "post": {
+                "description": "注册登记新的链码",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "链码注册",
+                "parameters": [
+                    {
+                        "description": "body参数",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.ReqChaincode"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "注册成功",
+                        "schema": {
+                            "$ref": "#/definitions/server.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/invoke": {
+            "post": {
+                "description": "交易调用",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "交易",
+                "parameters": [
+                    {
+                        "description": "body参数",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.ReqTransaction"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok\" \"返回用户信息",
+                        "schema": {
+                            "$ref": "#/definitions/server.Response"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "server.ReqChaincode": {
+            "type": "object",
+            "properties": {
+                "addr": {
+                    "type": "string"
+                },
+                "ccid": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tls": {
+                    "description": "TODO:",
+                    "type": "string"
+                }
+            }
+        },
+        "server.ReqTransaction": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "chaincode": {
+                    "type": "string"
+                },
+                "func": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.Response": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "object"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

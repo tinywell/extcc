@@ -1,0 +1,74 @@
+definitions:
+  server.ReqChaincode:
+    properties:
+      addr:
+        type: string
+      ccid:
+        type: string
+      name:
+        type: string
+      tls:
+        description: 'TODO:'
+        type: string
+    type: object
+  server.ReqTransaction:
+    properties:
+      args:
+        items:
+          type: string
+        type: array
+      chaincode:
+        type: string
+      func:
+        type: string
+    type: object
+  server.Response:
+    properties:
+      code:
+        type: integer
+      data:
+        type: object
+      message:
+        type: string
+    type: object
+info:
+  contact: {}
+  license: {}
+paths:
+  /api/chaincode:
+    post:
+      description: 注册登记新的链码
+      parameters:
+      - description: body参数
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/server.ReqChaincode'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 注册成功
+          schema:
+            $ref: '#/definitions/server.Response'
+      summary: 链码注册
+  /api/invoke:
+    post:
+      description: 交易调用
+      parameters:
+      - description: body参数
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/server.ReqTransaction'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok" "返回用户信息
+          schema:
+            $ref: '#/definitions/server.Response'
+      summary: 交易
+swagger: "2.0"
