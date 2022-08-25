@@ -94,7 +94,8 @@ func (cc *Chaincode) serve() {
 		case <-cc.keepaliveCh:
 			err := cc.handler.Keepalive()
 			if err != nil {
-				panic(err)
+				fmt.Println(err)
+				return
 			}
 		}
 	}
@@ -113,11 +114,18 @@ func (cc *Chaincode) getClient() (peer.ChaincodeClient, error) {
 }
 
 // Invoke ...
-func (cc *Chaincode) Invoke(fn string, args []string) (*peer.Response, error) {
+func (cc *Chaincode) Invoke(fn string, args []string, transients map[string][]byte, mspid, cert string) (*peer.Response, error) {
 	rc := make(chan *invokeRsp)
 	txid := GenerateUUID()
 	cc.events[txid] = rc
-	cc.handler.Invoke(txid, Channel, fn, args)
+	var opts []Opt
+	if len(transients) > 0 {
+		opts = append(opts, WithTransient(transients))
+	}
+	if len(mspid) > 0 {
+		opts = append(opts, WithSigner(mspid, "", cert))
+	}
+	cc.handler.Invoke(txid, Channel, fn, args, opts...)
 	res := <-rc
 	if res.err != nil {
 		return nil, res.err

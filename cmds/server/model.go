@@ -10,9 +10,12 @@ type ReqChaincode struct {
 
 // ReqTransaction ...
 type ReqTransaction struct {
-	Chaincode string   `json:"chaincode"`
-	Func      string   `json:"func"`
-	Args      []string `json:"args"`
+	Chaincode    string            `json:"chaincode,omitempty"`
+	Func         string            `json:"func,omitempty"`
+	Args         []string          `json:"args,omitempty"`
+	MSPID        string            `json:"mspid,omitempty"`
+	MSPCert      string            `json:"msp_cert,omitempty"`
+	TransientMap map[string][]byte `json:"transient_map,omitempty"`
 }
 
 // Response ...

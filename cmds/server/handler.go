@@ -3,6 +3,8 @@ package server
 import (
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
+	"github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric-protos-go/msp"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/pkg/errors"
 )
@@ -46,6 +48,14 @@ type Handler struct {
 	state     int
 	dbSupport DBSupport
 	eventer   TxEventer
+	config    *config
+}
+
+type config struct {
+	signMSP   string
+	signKey   string
+	signCert  string
+	transient map[string][]byte
 }
 
 // NewHandler ..
@@ -58,11 +68,15 @@ func NewHandler(
 		state:     HandleStateCreated,
 		dbSupport: db,
 		eventer:   event,
+		config:    &config{},
 	}
 }
 
 // Invoke ...
-func (h *Handler) Invoke(txid, channel, fn string, args []string) {
+func (h *Handler) Invoke(txid, channel, fn string, args []string, opts ...Opt) {
+	for _, o := range opts {
+		o(h.config)
+	}
 
 	var isInit bool
 	var inputArgs [][]byte
@@ -93,16 +107,65 @@ func (h *Handler) Invoke(txid, channel, fn string, args []string) {
 	if isInit {
 		cctype = peer.ChaincodeMessage_INIT
 	}
+	sp, _ := h.createProposal(txid, channel)
+
 	msg := &peer.ChaincodeMessage{
 		Type:      cctype,
 		Payload:   raw,
 		Txid:      txid,
 		ChannelId: channel,
+		Proposal:  sp,
 	}
 	err = h.stream.Send(msg)
 	if err != nil {
 		h.eventer.SendError(txid, err.Error())
 	}
+}
+func (h *Handler) createProposal(txid, channel string) (*peer.SignedProposal, error) {
+	payload := &peer.ChaincodeProposalPayload{
+		Input:        nil,
+		TransientMap: h.config.transient,
+	}
+	praw, err := proto.Marshal(payload)
+	if err != nil {
+		return nil, errors.WithMessage(err, "序列化 ChaincodeProposalPayload 出错")
+	}
+	creator := &msp.SerializedIdentity{Mspid: h.config.signMSP, IdBytes: []byte(h.config.signCert)}
+	creatorRaw, _ := proto.Marshal(creator)
+
+	ch := &common.ChannelHeader{
+		Type:        int32(common.HeaderType_ENDORSER_TRANSACTION),
+		Version:     0,
+		Timestamp:   nil,
+		ChannelId:   channel,
+		TxId:        txid,
+		Epoch:       0,
+		Extension:   nil,
+		TlsCertHash: nil,
+	}
+	chRaw, _ := proto.Marshal(ch)
+
+	sh := &common.SignatureHeader{Creator: creatorRaw}
+	shRaw, _ := proto.Marshal(sh)
+
+	hdr := &common.Header{SignatureHeader: shRaw, ChannelHeader: chRaw}
+	hdrRaw, _ := proto.Marshal(hdr)
+
+	prop := &peer.Proposal{
+		Header:    hdrRaw,
+		Payload:   praw,
+		Extension: nil,
+	}
+	propRaw, err := proto.Marshal(prop)
+	if err != nil {
+		return nil, errors.WithMessage(err, "序列化 Proposal 出错")
+	}
+
+	sp := &peer.SignedProposal{
+		ProposalBytes: propRaw,
+		Signature:     nil,
+	}
+	return sp, nil
 }
 
 // Keepalive 心跳

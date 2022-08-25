@@ -41,7 +41,7 @@ func (s *Server) Invoke(req *ReqTransaction) (*peer.Response, error) {
 	if !ok {
 		return nil, errors.Errorf("链码 %s 不存在，请先注册", req.Chaincode)
 	}
-	response, err := cc.Invoke(req.Func, req.Args)
+	response, err := cc.Invoke(req.Func, req.Args, req.TransientMap, req.MSPID, "")
 	if err != nil {
 		return nil, errors.WithMessage(err, "调用失败")
 	}
